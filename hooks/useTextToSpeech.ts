@@ -2,35 +2,36 @@ import { useState, useCallback, useEffect } from 'react';
 
 export const useTextToSpeech = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [voice, setVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
     const loadVoices = () => {
-      const voices = window.speechSynthesis.getVoices();
-      // Prefer standard English voices (Google US English, Samantha, etc.)
-      const englishVoice = voices.find(v => 
-        v.name.includes('Google US English') || 
-        v.name.includes('Samantha') || 
-        (v.lang.startsWith('en') && v.default)
-      );
-      setVoice(englishVoice || voices[0]);
+      const availableVoices = window.speechSynthesis.getVoices();
+      setVoices(availableVoices);
     };
 
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }, []);
 
-  const speak = useCallback((text: string) => {
+  const speak = useCallback((text: string, lang: 'en-US' | 'pt-BR' = 'en-US') => {
     if (!('speechSynthesis' in window)) return;
 
     window.speechSynthesis.cancel(); // Stop any current speech
 
     const utterance = new SpeechSynthesisUtterance(text);
-    if (voice) {
-      utterance.voice = voice;
+    
+    // Find best voice for the requested language
+    const preferredVoice = voices.find(v => 
+      v.lang === lang || v.lang.startsWith(lang.split('-')[0])
+    );
+
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
     }
-    utterance.lang = 'en-US';
-    utterance.rate = 1.0; // Natural speed
+    
+    utterance.lang = lang;
+    utterance.rate = 1.0; 
     utterance.pitch = 1.0;
 
     utterance.onstart = () => setIsSpeaking(true);
@@ -38,7 +39,7 @@ export const useTextToSpeech = () => {
     utterance.onerror = () => setIsSpeaking(false);
 
     window.speechSynthesis.speak(utterance);
-  }, [voice]);
+  }, [voices]);
 
   const stopSpeaking = useCallback(() => {
     if ('speechSynthesis' in window) {

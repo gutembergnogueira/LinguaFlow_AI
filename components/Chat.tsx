@@ -6,8 +6,8 @@ interface ChatProps {
   messages: Message[];
   isLoading: boolean;
   isSpeaking: boolean;
-  onSpeakMessage: (text: string) => void;
-  onExplainMessage: (id: string, text: string) => void;
+  onSpeakMessage: (text: string, lang?: 'en-US' | 'pt-BR') => void;
+  onExplainMessage: (id: string, text: string) => Promise<string | null>;
 }
 
 export const Chat: React.FC<ChatProps> = ({ 

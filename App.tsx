@@ -9,6 +9,7 @@ import { Bot, MessageSquare, Volume2, Mic } from 'lucide-react';
 
 export default function App() {
   const [currentScenario, setCurrentScenario] = useState<Scenario>(SCENARIOS[0]);
+  const [lastSpokenMessageId, setLastSpokenMessageId] = useState<string | null>(null);
   
   const { 
     messages, 
@@ -33,6 +34,7 @@ export default function App() {
     setCurrentScenario(scenario);
     clearHistory();
     stopSpeaking();
+    setLastSpokenMessageId(null);
   };
 
   // When transcript is finalized (listening stops), send message
@@ -43,13 +45,19 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isListening, transcript]);
 
-  // Automatically speak the last AI message
+  // Automatically speak the last AI message ONLY if it hasn't been spoken yet
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.role === 'model' && lastMessage.content) {
+    if (
+      lastMessage && 
+      lastMessage.role === 'model' && 
+      lastMessage.content &&
+      lastMessage.id !== lastSpokenMessageId
+    ) {
       speak(lastMessage.content);
+      setLastSpokenMessageId(lastMessage.id);
     }
-  }, [messages, speak]);
+  }, [messages, speak, lastSpokenMessageId]);
 
   return (
     <div className="flex flex-col h-screen max-h-screen bg-gray-50">

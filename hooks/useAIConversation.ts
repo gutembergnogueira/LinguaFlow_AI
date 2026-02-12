@@ -21,11 +21,11 @@ export const useAIConversation = (scenario: Scenario) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const prompt = `
-        Translate the following English text to Portuguese and provide a brief explanation of the grammar or context for a Brazilian student learning English.
+        Translate the following English text to Portuguese.
         
-        Text to explain: "${textToExplain}"
+        Text to translate: "${textToExplain}"
         
-        Output format: Just the Portuguese explanation/translation text.
+        Output format: Return ONLY the Portuguese translation. Do not add any explanation, notes, or preamble.
       `;
 
       const response = await ai.models.generateContent({
@@ -33,22 +33,25 @@ export const useAIConversation = (scenario: Scenario) => {
         contents: prompt,
       });
 
-      const explanation = response.text;
+      const translation = response.text;
 
-      // Update message with the explanation
+      // Update message with the translation
       setMessages(prev => prev.map(msg => 
         msg.id === messageId ? { 
           ...msg, 
           isExplaining: false, 
-          metadata: { ...msg.metadata, explanationPt: explanation } 
+          metadata: { ...msg.metadata, explanationPt: translation } 
         } : msg
       ));
+      
+      return translation; // Return for immediate use (e.g. by TTS)
 
     } catch (error) {
-      console.error("Explanation Error:", error);
+      console.error("Translation Error:", error);
       setMessages(prev => prev.map(msg => 
         msg.id === messageId ? { ...msg, isExplaining: false } : msg
       ));
+      return null;
     }
   }, []);
 
