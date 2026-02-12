@@ -23,6 +23,7 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
   
   const recognitionRef = useRef<any>(null);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const finalTranscriptRef = useRef(''); // Armazena o texto finalizado para evitar duplicação
 
   // Configuration for silence detection (in milliseconds)
   const SILENCE_TIMEOUT = 2000; 
@@ -57,7 +58,10 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
   const startListening = useCallback(() => {
     if (recognitionRef.current && !isListening) {
       try {
+        // Reset transcripts
         setTranscript('');
+        finalTranscriptRef.current = '';
+        
         recognitionRef.current.start();
         setIsListening(true);
       } catch (error) {
@@ -77,23 +81,31 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
         clearTimeout(silenceTimerRef.current);
       }
 
-      let finalTranscript = '';
       let interimTranscript = '';
 
-      for (let i = 0; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript + ' ';
+      // Usamos resultIndex para iterar apenas sobre os NOVOS resultados ou atualizações
+      // Isso evita processar todo o histórico desde o início, que causa o bug de duplicação
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const result = event.results[i];
+        const transcriptText = result[0].transcript;
+        
+        if (result.isFinal) {
+          // Se for final, adicionamos ao nosso ref de histórico
+          finalTranscriptRef.current += transcriptText + ' ';
         } else {
-          interimTranscript += event.results[i][0].transcript;
+          // Se for interim, guardamos para exibir, mas não salvamos no ref ainda
+          interimTranscript += transcriptText;
         }
       }
 
-      const currentTranscript = finalTranscript + interimTranscript;
-      setTranscript(currentTranscript);
+      // O transcript final é a soma do que já foi confirmado + o que está sendo falado agora
+      const currentFullTranscript = (finalTranscriptRef.current + interimTranscript).trim();
+      setTranscript(currentFullTranscript);
 
       // Set a timer to stop listening if silence persists
       silenceTimerRef.current = setTimeout(() => {
-        if (finalTranscript.trim().length > 0 || interimTranscript.trim().length > 0) {
+        // Only stop if we actually have some text (prevent stopping on noise)
+        if (currentFullTranscript.length > 0) {
             stopListening();
         }
       }, SILENCE_TIMEOUT);
