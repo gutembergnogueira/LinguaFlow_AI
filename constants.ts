@@ -64,7 +64,7 @@ You MUST respond in valid JSON format with the following schema:
 {
   "reply": "Your conversational response as the character.",
   "correction": "The corrected version of the user's last sentence if it had errors, otherwise null.",
-  "explanation": "A brief, friendly explanation of why the correction is needed, otherwise null.",
-  "natural_version": "A more native-sounding way to express the user's idea, even if grammatically correct."
+  "explanation": "A friendly, constructive explanation of the error. Point out specifically which words were wrong and why.",
+  "natural_version": "A more native-sounding alternative to express the same idea, distinct from the strict correction."
 }
 `;

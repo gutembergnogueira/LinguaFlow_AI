@@ -14,7 +14,8 @@ export default function App() {
     messages, 
     sendMessage, 
     isLoading, 
-    clearHistory 
+    clearHistory,
+    explainInPortuguese 
   } = useAIConversation(currentScenario);
   
   const { 
@@ -88,6 +89,7 @@ export default function App() {
           isLoading={isLoading} 
           isSpeaking={isSpeaking}
           onSpeakMessage={speak}
+          onExplainMessage={explainInPortuguese}
         />
         
         {/* Interaction Area */}

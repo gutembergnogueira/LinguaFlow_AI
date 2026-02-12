@@ -11,6 +11,47 @@ export const useAIConversation = (scenario: Scenario) => {
     setMessages([]);
   }, []);
 
+  const explainInPortuguese = useCallback(async (messageId: string, textToExplain: string) => {
+    // Set loading state for the specific message
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId ? { ...msg, isExplaining: true } : msg
+    ));
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      
+      const prompt = `
+        Translate the following English text to Portuguese and provide a brief explanation of the grammar or context for a Brazilian student learning English.
+        
+        Text to explain: "${textToExplain}"
+        
+        Output format: Just the Portuguese explanation/translation text.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+      });
+
+      const explanation = response.text;
+
+      // Update message with the explanation
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId ? { 
+          ...msg, 
+          isExplaining: false, 
+          metadata: { ...msg.metadata, explanationPt: explanation } 
+        } : msg
+      ));
+
+    } catch (error) {
+      console.error("Explanation Error:", error);
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId ? { ...msg, isExplaining: false } : msg
+      ));
+    }
+  }, []);
+
   const sendMessage = useCallback(async (userText: string) => {
     if (!userText.trim()) return;
 
@@ -37,16 +78,6 @@ export const useAIConversation = (scenario: Scenario) => {
         },
         required: ["reply"]
       };
-
-      // Construct history for context
-      // We only send the last few messages to keep context relevant but concise, 
-      // although Gemini handles large context windows well.
-      // For simplicity in this demo, we'll just rely on the new message + system instruction.
-      // To properly implement history, we would convert `messages` to Content objects.
-      
-      // Let's create a Chat session ideally, or just send history in contents.
-      // Using `ai.models.generateContent` with a system prompt and the current input 
-      // is robust for a "turn-based" app where we want JSON output enforcement each time.
       
       const prompt = `
         Current Scenario: ${scenario.label}
@@ -105,6 +136,7 @@ export const useAIConversation = (scenario: Scenario) => {
     messages,
     sendMessage,
     isLoading,
-    clearHistory
+    clearHistory,
+    explainInPortuguese
   };
 };
