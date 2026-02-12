@@ -1,0 +1,7 @@
+{
+  "name": "LinguaFlow AI",
+  "description": "A sophisticated AI-powered English conversation practice application featuring real-time speech processing, grammar correction, and scenario-based learning.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
